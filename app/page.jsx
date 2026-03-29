@@ -80,7 +80,9 @@ const parseCSV = (text) => {
   if (m.name === undefined && m.business === undefined) return { err: "No name or business column", data: [] };
   const data = [];
   for (let i = 1; i < lines.length; i++) {
-    const v = lines[i].match(/(".*?"|[^,]*)/g)?.map((x) => x.replace(/^"|"$/g, "").trim()) || [];
+    const v = []; let cur = "", inQ = false;
+    for (const ch of lines[i]) { if (ch === '"') { inQ = !inQ; } else if (ch === ',' && !inQ) { v.push(cur.trim()); cur = ""; } else { cur += ch; } }
+    v.push(cur.trim());
     const r = { name: v[m.name]||"", business: v[m.business]||"", phone: v[m.phone]||"", email: v[m.email]||"", website: v[m.website]||"", address: v[m.address]||"", city: v[m.city]||"", postal_code: v[m.postal_code]||"", state: v[m.state]||"", industry: v[m.industry]||"Other", competitor: v[m.competitor]||"", notes: v[m.notes]||"" };
     if (r.name || r.business) data.push(r);
   }
@@ -115,6 +117,7 @@ export default function Tracker() {
   const addOne = async () => { if (!np.business) return; setSaving(true); const { data } = await supabase.from("prospects").insert({ ...np, disposition: null, call_history: [], follow_up_date: null }).select(); if (data) setPs((p) => [data[0], ...p]); setNp({ business:"",name:"",phone:"",website:"",address:"",city:"",postal_code:"",state:"",industry:"Roofing",competitor:"",email:"",notes:"" }); setShowAdd(false); setSaving(false); };
   const log = async (id, d) => { const pr = ps.find((p) => p.id === id); if (!pr) return; setSaving(true); const { data } = await supabase.from("prospects").update({ disposition: d, call_history: [...(pr.call_history || []), { disposition: d, note, timestamp: new Date().toISOString(), cbDate: d === "callback" ? cbDate : null }], follow_up_date: d === "callback" ? cbDate : pr.follow_up_date }).eq("id", id).select(); if (data) { setPs((prev) => prev.map((p) => (p.id === id ? data[0] : p))); setSel(data[0]); } setNote(""); setCbDate(""); setSaving(false); };
   const del = async (id) => { await supabase.from("prospects").delete().eq("id", id); setPs((p) => p.filter((x) => x.id !== id)); if (sel?.id === id) setSel(null); };
+  const clearAll = async () => { if (!confirm(`Delete all ${ps.length} prospects? This cannot be undone.`)) return; setSaving(true); await supabase.from("prospects").delete().neq("id", "00000000-0000-0000-0000-000000000000"); setPs([]); setSel(null); setSaving(false); };
   const imp = async () => { if (!csvD?.length) return; setSaving(true); const { data } = await supabase.from("prospects").insert(csvD.map((r) => ({ ...r, disposition: null, call_history: [], follow_up_date: null }))).select(); if (data) setPs((p) => [...data, ...p]); setCsv(""); setCsvD(null); setShowCsv(false); setSaving(false); };
   const prevC = () => { const r = parseCSV(csv); if (r.err) { setCsvE(r.err); setCsvD(null); } else { setCsvE(""); setCsvD(r.data); } };
   const exp = () => { const h = "business,name,phone,website,address,city,state,postal_code,industry,disposition,calls,notes\n"; const r = ps.map((p) => `"${p.business}","${p.name}","${p.phone}","${p.website}","${p.address||""}","${p.city}","${p.state}","${p.postal_code||""}","${p.industry}","${p.disposition||"fresh"}","${(p.call_history||[]).length}","${p.notes}"`).join("\n"); const b = new Blob([h + r], { type: "text/csv" }); const u = URL.createObjectURL(b); const a = document.createElement("a"); a.href = u; a.download = "mgl-prospects.csv"; a.click(); };
@@ -146,6 +149,7 @@ export default function Tracker() {
             <button onClick={() => setShowCsv(true)} style={gh}>📁 CSV</button>
             <button onClick={() => { setShowAdd(true); setTab("dialer"); }} style={{ ...gh, background: c.acc, color: "white", border: "none" }}>+ Add</button>
             {ps.length > 0 && <button onClick={exp} style={gh}>⬇</button>}
+            {ps.length > 0 && <button onClick={clearAll} style={{ ...gh, color: "#ef4444" }}>🗑 Clear All</button>}
           </div>
         </div>
         <div style={{ display: "flex", gap: 16, fontSize: 10, color: c.tx3, marginBottom: 8, fontFamily: "monospace" }}>
@@ -205,8 +209,7 @@ export default function Tracker() {
                       <b style={{ fontSize: 11 }}>{p.business || p.name}</b>
                       <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 12, background: (d?.c || "#22c55e") + c.pill, color: d?.c || "#22c55e" }}>{d ? `${d.i} ${d.l}` : "NEW"}</span>
                     </div>
-                    <div style={{ fontSize: 9, color: c.tx3, marginTop: 1 }}>{p.name ? `${p.name} · ` : ""}{p.city||""}{p.state ? `, ${p.state}` : ""} · {p.industry}</div>
-                    {p.phone && <div style={{ fontSize: 9, color: c.acc, marginTop: 1 }}>📞 {p.phone}</div>}
+                    <div style={{ fontSize: 9, color: c.tx3, marginTop: 1 }}>{p.name ? `${p.name} · ` : ""}{p.city||""}{p.state ? `, ${p.state}` : ""} · {p.industry}{p.phone ? <span style={{ color: c.acc }}> · 📞 {p.phone}</span> : ""}</div>
                   </div>
                   <span style={{ fontSize: 9, color: c.tx5 }}>{(p.call_history || []).length}</span>
                 </div>
