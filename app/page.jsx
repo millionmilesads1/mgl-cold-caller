@@ -206,6 +206,7 @@ export default function Tracker() {
                       <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 12, background: (d?.c || "#22c55e") + c.pill, color: d?.c || "#22c55e" }}>{d ? `${d.i} ${d.l}` : "NEW"}</span>
                     </div>
                     <div style={{ fontSize: 9, color: c.tx3, marginTop: 1 }}>{p.name ? `${p.name} · ` : ""}{p.city||""}{p.state ? `, ${p.state}` : ""} · {p.industry}</div>
+                    {p.phone && <div style={{ fontSize: 9, color: c.acc, marginTop: 1 }}>📞 {p.phone}</div>}
                   </div>
                   <span style={{ fontSize: 9, color: c.tx5 }}>{(p.call_history || []).length}</span>
                 </div>
