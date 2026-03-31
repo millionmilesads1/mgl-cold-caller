@@ -31,8 +31,9 @@ const DISPS = [
 const INDS = ["Roofing", "HVAC", "Plumbing", "Electrical", "Landscaping", "Pest Control", "Painting", "Other"];
 const STATE_TZ = { AZ:"America/Phoenix",AL:"America/Chicago",AK:"America/Anchorage",AR:"America/Chicago",CA:"America/Los_Angeles",CO:"America/Denver",CT:"America/New_York",DE:"America/New_York",FL:"America/New_York",GA:"America/New_York",HI:"Pacific/Honolulu",ID:"America/Boise",IL:"America/Chicago",IN:"America/Indiana/Indianapolis",IA:"America/Chicago",KS:"America/Chicago",KY:"America/New_York",LA:"America/Chicago",ME:"America/New_York",MD:"America/New_York",MA:"America/New_York",MI:"America/Detroit",MN:"America/Chicago",MS:"America/Chicago",MO:"America/Chicago",MT:"America/Denver",NE:"America/Chicago",NV:"America/Los_Angeles",NH:"America/New_York",NJ:"America/New_York",NM:"America/Denver",NY:"America/New_York",NC:"America/New_York",ND:"America/Chicago",OH:"America/New_York",OK:"America/Chicago",OR:"America/Los_Angeles",PA:"America/New_York",RI:"America/New_York",SC:"America/New_York",SD:"America/Chicago",TN:"America/Chicago",TX:"America/Chicago",UT:"America/Denver",VT:"America/New_York",VA:"America/New_York",WA:"America/Los_Angeles",WV:"America/New_York",WI:"America/Chicago",WY:"America/Denver",DC:"America/New_York" };
 const STATES = Object.keys(STATE_TZ);
+const STATE_NAMES = { ALABAMA:"AL",ALASKA:"AK",ARIZONA:"AZ",ARKANSAS:"AR",CALIFORNIA:"CA",COLORADO:"CO",CONNECTICUT:"CT",DELAWARE:"DE",FLORIDA:"FL",GEORGIA:"GA",HAWAII:"HI",IDAHO:"ID",ILLINOIS:"IL",INDIANA:"IN",IOWA:"IA",KANSAS:"KS",KENTUCKY:"KY",LOUISIANA:"LA",MAINE:"ME",MARYLAND:"MD",MASSACHUSETTS:"MA",MICHIGAN:"MI",MINNESOTA:"MN",MISSISSIPPI:"MS",MISSOURI:"MO",MONTANA:"MT",NEBRASKA:"NE",NEVADA:"NV","NEW HAMPSHIRE":"NH","NEW JERSEY":"NJ","NEW MEXICO":"NM","NEW YORK":"NY","NORTH CAROLINA":"NC","NORTH DAKOTA":"ND",OHIO:"OH",OKLAHOMA:"OK",OREGON:"OR",PENNSYLVANIA:"PA","RHODE ISLAND":"RI","SOUTH CAROLINA":"SC","SOUTH DAKOTA":"SD",TENNESSEE:"TN",TEXAS:"TX",UTAH:"UT",VERMONT:"VT",VIRGINIA:"VA",WASHINGTON:"WA","WEST VIRGINIA":"WV",WISCONSIN:"WI",WYOMING:"WY","DISTRICT OF COLUMBIA":"DC" };
 const extractState = (p) => {
-  if (p.state) { const s = p.state.trim().toUpperCase(); if (STATE_TZ[s]) return s; }
+  if (p.state) { const s = p.state.trim().toUpperCase(); if (STATE_TZ[s]) return s; if (STATE_NAMES[s]) return STATE_NAMES[s]; }
   // Try to find state abbreviation in address like "Phoenix, AZ 85050"
   const fields = [p.address, p.city, p.notes].filter(Boolean).join(" ");
   for (const st of STATES) {
@@ -105,7 +106,7 @@ export default function Tracker() {
   const [showCsv, setShowCsv] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [stab, setStab] = useState("flow");
-  const [dark, setDark] = useState(true);
+  const [dark, setDark] = useState(false);
   const [now, setNow] = useState(new Date());
   const [np, setNp] = useState({ business:"",name:"",phone:"",website:"",address:"",city:"",postal_code:"",state:"",industry:"Roofing",competitor:"",email:"",notes:"" });
   const fr = useRef(null);
