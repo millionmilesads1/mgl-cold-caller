@@ -58,8 +58,8 @@ const pz = (t, p) => {
   const nd = new Date(); nd.setDate(nd.getDate() + 2);
   if (nd.getDay() === 0) nd.setDate(nd.getDate() + 1);
   if (nd.getDay() === 6) nd.setDate(nd.getDate() + 2);
-  // If name is same as business or empty, use "there"
-  const realName = (p.name && p.name.toLowerCase() !== p.business?.toLowerCase()) ? p.name : "there";
+  // If name is same as business or empty, use the business name
+  const realName = (p.name && p.name.toLowerCase() !== p.business?.toLowerCase()) ? p.name : (p.business || "there");
   return t.replace(/\[NAME\]/g, realName).replace(/\[BUSINESS\]/g, p.business || "your company").replace(/\[CITY\]/g, p.city || "your area").replace(/\[WEBSITE\]/g, p.website || "your website").replace(/\[COMPETITOR\]/g, p.competitor || "your top competitor").replace(/\[INDUSTRY\]/g, p.industry === "Other" ? "roofing" : (p.industry || "roofing")).replace(/\[SERVICE\]/g, p.industry === "Other" ? "roofing" : (p.industry?.toLowerCase() || "roofing")).replace(/\[DAY\]/g, nd.toLocaleDateString("en-US", { weekday: "long" }));
 };
 
@@ -73,7 +73,7 @@ const parseCSV = (text) => {
     else if (h.includes("business") || h.includes("company")) m.business = i;
     else if (h.includes("phone") || h.includes("tel")) m.phone = i;
     else if (h.includes("email")) m.email = i;
-    else if (h.includes("website") || h.includes("url") || h.includes("site")) m.website = i;
+    else if (h.includes("website") || h.includes("url") || h.includes("site") || h.includes("web") || h.includes("domain") || h.includes("link") || h.includes("homepage")) m.website = i;
     else if (h.includes("address") || h.includes("street")) m.address = i;
     else if (h.includes("city") || h.includes("town")) m.city = i;
     else if (h.includes("postal") || h.includes("zip")) m.postal_code = i;
@@ -204,14 +204,14 @@ export default function Tracker() {
             <div style={{ flex: "1 1 280px", maxHeight: 500, overflowY: "auto" }}>
               {fp.length === 0 && <div style={{ textAlign: "center", padding: 36, color: c.tx4 }}><p style={{ fontSize: 24 }}>📁</p><p style={{ fontSize: 12, marginTop: 6 }}>No prospects.</p></div>}
               {fp.map((p) => {
-                const d = DISPS.find((x) => x.id === p.disposition); return (
+                const d = DISPS.find((x) => x.id === p.disposition); const pState = extractState(p); const pTZ = pState ? getTZ(pState) : null; const pTime = pTZ ? fmtTime(pTZ) : null; return (
                   <div key={p.id} className={`P ${sel?.id === p.id ? "on" : ""}`} onClick={() => setSel(p)}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
                         <b style={{ fontSize: 11 }}>{p.business || p.name}</b>
                         <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 12, background: (d?.c || "#22c55e") + c.pill, color: d?.c || "#22c55e" }}>{d ? `${d.i} ${d.l}` : "NEW"}</span>
                       </div>
-                      <div style={{ fontSize: 9, color: c.tx3, marginTop: 1 }}>{p.name ? `${p.name} · ` : ""}{p.city || ""}{p.state ? `, ${p.state}` : ""} · {p.industry}</div>
+                      <div style={{ fontSize: 9, color: c.tx3, marginTop: 1 }}>{p.phone ? `📞 ${p.phone} · ` : ""}{p.city || ""}{p.state ? `, ${p.state}` : ""}{p.website ? ` · 🌐` : ""}{pTime ? ` · 🕐 ${pTime}` : ""}</div>
                     </div>
                     <span style={{ fontSize: 9, color: c.tx5 }}>{(p.call_history || []).length}</span>
                   </div>
