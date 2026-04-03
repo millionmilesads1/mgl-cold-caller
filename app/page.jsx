@@ -33,14 +33,25 @@ const DISPS = [
 ];
 const INDS = ["Roofing", "HVAC", "Plumbing", "Electrical", "Landscaping", "Pest Control", "Painting", "Other"];
 const STATE_TZ = { AZ: "America/Phoenix", AL: "America/Chicago", AK: "America/Anchorage", AR: "America/Chicago", CA: "America/Los_Angeles", CO: "America/Denver", CT: "America/New_York", DE: "America/New_York", FL: "America/New_York", GA: "America/New_York", HI: "Pacific/Honolulu", ID: "America/Boise", IL: "America/Chicago", IN: "America/Indiana/Indianapolis", IA: "America/Chicago", KS: "America/Chicago", KY: "America/New_York", LA: "America/Chicago", ME: "America/New_York", MD: "America/New_York", MA: "America/New_York", MI: "America/Detroit", MN: "America/Chicago", MS: "America/Chicago", MO: "America/Chicago", MT: "America/Denver", NE: "America/Chicago", NV: "America/Los_Angeles", NH: "America/New_York", NJ: "America/New_York", NM: "America/Denver", NY: "America/New_York", NC: "America/New_York", ND: "America/Chicago", OH: "America/New_York", OK: "America/Chicago", OR: "America/Los_Angeles", PA: "America/New_York", RI: "America/New_York", SC: "America/New_York", SD: "America/Chicago", TN: "America/Chicago", TX: "America/Chicago", UT: "America/Denver", VT: "America/New_York", VA: "America/New_York", WA: "America/Los_Angeles", WV: "America/New_York", WI: "America/Chicago", WY: "America/Denver", DC: "America/New_York" };
+const STATE_NAMES = { "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR", "california": "CA", "colorado": "CO", "connecticut": "CT", "delaware": "DE", "florida": "FL", "georgia": "GA", "hawaii": "HI", "idaho": "ID", "illinois": "IL", "indiana": "IN", "iowa": "IA", "kansas": "KS", "kentucky": "KY", "louisiana": "LA", "maine": "ME", "maryland": "MD", "massachusetts": "MA", "michigan": "MI", "minnesota": "MN", "mississippi": "MS", "missouri": "MO", "montana": "MT", "nebraska": "NE", "nevada": "NV", "new hampshire": "NH", "new jersey": "NJ", "new mexico": "NM", "new york": "NY", "north carolina": "NC", "north dakota": "ND", "ohio": "OH", "oklahoma": "OK", "oregon": "OR", "pennsylvania": "PA", "rhode island": "RI", "south carolina": "SC", "south dakota": "SD", "tennessee": "TN", "texas": "TX", "utah": "UT", "vermont": "VT", "virginia": "VA", "washington": "WA", "west virginia": "WV", "wisconsin": "WI", "wyoming": "WY", "district of columbia": "DC" };
 const STATES = Object.keys(STATE_TZ);
 const extractState = (p) => {
-  if (p.state) { const s = p.state.trim().toUpperCase(); if (STATE_TZ[s]) return s; }
-  // Try to find state abbreviation in address like "Phoenix, AZ 85050"
+  if (p.state) {
+    const s = p.state.trim().toUpperCase();
+    if (STATE_TZ[s]) return s;
+    const abbr = STATE_NAMES[p.state.trim().toLowerCase()];
+    if (abbr) return abbr;
+  }
   const fields = [p.address, p.city, p.notes].filter(Boolean).join(" ");
+  // Check 2-letter abbreviations in address strings like "Cave Creek, AZ 85331"
   for (const st of STATES) {
     const rx = new RegExp(`[,\\s]${st}[\\s,\\d]|[,\\s]${st}$`, "i");
     if (rx.test(fields)) return st;
+  }
+  // Check full state names in address strings like "Cave Creek, Arizona"
+  const fieldsLower = fields.toLowerCase();
+  for (const [name, abbr] of Object.entries(STATE_NAMES)) {
+    if (fieldsLower.includes(name)) return abbr;
   }
   return null;
 };
@@ -60,7 +71,7 @@ const pz = (t, p) => {
   if (nd.getDay() === 6) nd.setDate(nd.getDate() + 2);
   // If name is same as business or empty, use the business name
   const realName = (p.name && p.name.toLowerCase() !== p.business?.toLowerCase()) ? p.name : (p.business || "there");
-  return t.replace(/\[NAME\]/g, realName).replace(/\[BUSINESS\]/g, p.business || "your company").replace(/\[CITY\]/g, p.city || "your area").replace(/\[WEBSITE\]/g, p.website || "your website").replace(/\[COMPETITOR\]/g, p.competitor || "your top competitor").replace(/\[INDUSTRY\]/g, p.industry === "Other" ? "roofing" : (p.industry || "roofing")).replace(/\[SERVICE\]/g, p.industry === "Other" ? "roofing" : (p.industry?.toLowerCase() || "roofing")).replace(/\[DAY\]/g, nd.toLocaleDateString("en-US", { weekday: "long" }));
+  return t.replace(/\[NAME\]/g, realName).replace(/\[BUSINESS\]/g, p.business || p.name || "your company").replace(/\[CITY\]/g, p.city || "your area").replace(/\[WEBSITE\]/g, p.website || "your website").replace(/\[COMPETITOR\]/g, p.competitor || "your top competitor").replace(/\[INDUSTRY\]/g, p.industry === "Other" ? "roofing" : (p.industry || "roofing")).replace(/\[SERVICE\]/g, p.industry === "Other" ? "roofing" : (p.industry?.toLowerCase() || "roofing")).replace(/\[DAY\]/g, nd.toLocaleDateString("en-US", { weekday: "long" }));
 };
 
 const parseCSV = (text) => {
